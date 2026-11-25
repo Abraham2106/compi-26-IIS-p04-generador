@@ -6,11 +6,11 @@ de Quantum Coffee. La siguiente etapa es incorporar el generador de código.
 
 La base actual valida identificadores y tipos, administra ámbitos y una tabla
 de símbolos, infiere tipos de retorno y decora el ASA con referencias a las
-declaraciones. El generador todavía no está implementado.
+declaraciones. El visitante del generador traduce expresiones y operadores a Python.
 
 ## Requisitos
 
-- Python 3.10 o posterior.
+- Python 3.12 o posterior.
 - Ruff para ejecutar el análisis de estilo.
 
 Ejecuta los comandos desde la raíz del repositorio. El proyecto no requiere
@@ -21,13 +21,13 @@ dependencias externas para correr el verificador.
 Verificar un programa `.qc` con la base semántica:
 
 ```bash
-python -m parser.semantica parser/ejemplos_completos/07_ajustes.qc
+python -m parser.semantica archivo.qc
 ```
 
 Imprimir los cambios parciales y la tabla final de símbolos:
 
 ```bash
-python -m parser.semantica parser/ejemplos_completos/07_ajustes.qc --tabla
+python -m parser.semantica archivo.qc --tabla
 ```
 
 El comando termina con código `0` si el programa pasa la verificación y con
@@ -37,8 +37,8 @@ indican archivo, línea, columna y el fragmento de código cuando corresponde.
 Para ejecutar solo el scanner o el parser:
 
 ```bash
-python scanner/main.py parser/ejemplos_completos/07_ajustes.qc
-python -m parser parser/ejemplos_completos/07_ajustes.qc
+python scanner/main.py archivo.qc
+python -m parser archivo.qc
 ```
 
 ## Desarrollo y validación
@@ -52,13 +52,13 @@ python -m unittest discover -s parser/verificacion -t . -v
 Revisar el estilo:
 
 ```bash
-python -m ruff check parser scanner
+python -m ruff check generador parser scanner
 ```
 
 ## Estructura
 
 - `scanner/`: análisis léxico.
-- `parser/`: análisis sintáctico, integración del ASA y ejemplos `.qc`.
+- `parser/`: análisis sintáctico, integración del ASA.
 - `parser/semantica/`: tabla de símbolos, verificación de identificadores,
   inferencia de tipos, diagnósticos e interfaz de línea de comandos.
 - `parser/verificacion/`: pruebas automatizadas.
@@ -67,10 +67,9 @@ python -m ruff check parser scanner
 
 ## Inicio de la etapa de generación
 
-La implementación del generador debe integrarse después de la verificación
-semántica para consumir el ASA decorado. El formato de salida y las
-instrucciones concretas de generación se definirán de acuerdo con la
-especificación del proyecto final.
+El punto de entrada de esta etapa es
+`GeneradorPython().visitar(nodo_expresion)`, que devuelve el texto Python
+de una expresión del ASA verificado.
 
 ## Equipo
 
