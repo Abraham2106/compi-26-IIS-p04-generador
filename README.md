@@ -1,13 +1,12 @@
-# Verificador semántico de Quantum Coffee
+# Generador de código de Quantum Coffee
 
-Compilador Quantum Coffee: verificador. Proyecto 4 del curso Compiladores e
-Intérpretes. Integra el scanner y el parser
-del lenguaje Quantum Coffee con un verificador semántico que recorre el ASA de
-arriba hacia abajo mediante el patrón Visitante.
+Proyecto final del curso Compiladores e Intérpretes. Este repositorio parte de
+la implementación integrada del scanner, parser, ASA y verificador semántico
+de Quantum Coffee. La siguiente etapa es incorporar el generador de código.
 
-El verificador administra ámbitos y una tabla de símbolos, valida identificadores
-y tipos, infiere tipos de retorno, y decora el ASA con referencias a las
-declaraciones. La salida del verificador imprime el ASA decorado en preorden.
+La base actual valida identificadores y tipos, administra ámbitos y una tabla
+de símbolos, infiere tipos de retorno y decora el ASA con referencias a las
+declaraciones. El generador todavía no está implementado.
 
 ## Requisitos
 
@@ -19,13 +18,13 @@ dependencias externas para correr el verificador.
 
 ## Uso
 
-Verificar un programa `.qc`:
+Verificar un programa `.qc` con la base semántica:
 
 ```bash
 python -m parser.semantica parser/ejemplos_completos/07_ajustes.qc
 ```
 
-Verificarlo e imprimir los cambios parciales y la tabla final de símbolos:
+Imprimir los cambios parciales y la tabla final de símbolos:
 
 ```bash
 python -m parser.semantica parser/ejemplos_completos/07_ajustes.qc --tabla
@@ -65,6 +64,13 @@ python -m ruff check parser scanner
 - `parser/verificacion/`: pruebas automatizadas.
 - `docs/Tabla_de_simbolos.md`: diseño e impresión de la tabla de símbolos.
 - `docs/Errores_y_pruebas/Demostracion.md`: guía para demostrar el verificador.
+
+## Inicio de la etapa de generación
+
+La implementación del generador debe integrarse después de la verificación
+semántica para consumir el ASA decorado. El formato de salida y las
+instrucciones concretas de generación se definirán de acuerdo con la
+especificación del proyecto final.
 
 ## Equipo
 
