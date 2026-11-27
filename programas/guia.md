@@ -1,11 +1,15 @@
-Por el momento no se puede transpilar, faltan algunas cosas, pues el generador solo traduce expresiones.
+# Carrera de caracoles
 
-Lo que si se puede hacer es verificar el programa:
+Desde la raíz del repositorio, generá y ejecutá el programa.
 
-```bash 
-python -m parser.semantica programas/carrera_caracoles.qc
+```bash
+python -m generador programas/carrera_caracoles.qc
+python programas/carrera_caracoles.py
 ```
 
-Esto verifica que el programa es valido. Imprimiendo: "verificacion semantica correcta".
+Escribí `Turbo`, `Moka` o `Canela` para elegir tu apuesta. El programa dibuja
+la posición de cada caracol en cada turno y anuncia quién llegó a la meta.
+En caso de empate, muestra a todos los ganadores de ese turno.
 
-Ádemas de imprimir el árbol despues de esa linea
+Para inspeccionar solo el ASA decorado, ejecutá
+`python -m parser.semantica programas/carrera_caracoles.qc`.

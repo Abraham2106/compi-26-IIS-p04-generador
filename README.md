@@ -1,76 +1,79 @@
 # Generador de código de Quantum Coffee
 
-Proyecto final del curso Compiladores e Intérpretes. Este repositorio parte de
-la implementación integrada del scanner, parser, ASA y verificador semántico
-de Quantum Coffee. El generador traduce el ASA decorado a un archivo Python 3.8 o superior.
+Proyecto final del curso Compiladores e Intérpretes. El transpilador convierte
+programas Quantum Coffee (`.qc`) en archivos Python ejecutables. Integra el
+scanner, el parser y el verificador semántico. El generador usa el patrón
+Visitante para recorrer el árbol de sintaxis abstracta (ASA) decorado y emitir
+código que respeta los tipos, las referencias y los ámbitos del programa.
 
-La base actual valida identificadores y tipos, administra ámbitos y una tabla
-de símbolos, infiere tipos de retorno y decora el ASA con referencias a las
-declaraciones. El visitante del generador traduce expresiones y operadores a Python.
+La traducción incluye expresiones, declaraciones, asignaciones, funciones,
+control de flujo, listas y entrada y salida por consola. Los programas con
+qubits incorporan un simulador de compuertas y medición en el archivo generado.
 
 ## Requisitos
 
-- Python 3.12 o posterior.
-- Ruff para ejecutar el análisis de estilo.
+- Python 3.12 o posterior para ejecutar el transpilador.
+- Python 3.8 o posterior para ejecutar el archivo generado.
+- Ruff para la revisión de estilo durante el desarrollo.
 
-Ejecuta los comandos desde la raíz del repositorio. El proyecto no requiere
-dependencias externas para correr el verificador.
+El transpilador y los archivos generados usan la biblioteca estándar de Python.
+Ejecutá los comandos desde la raíz del repositorio.
 
-## Uso
-
-Verificar un programa `.qc` con la base semántica:
-
-```bash
-python -m parser.semantica archivo.qc
-```
-
-Imprimir los cambios parciales y la tabla final de símbolos:
+## Transpilar y ejecutar
 
 ```bash
-python -m parser.semantica archivo.qc --tabla
+python -m generador programas/carrera_caracoles.qc
+python programas/carrera_caracoles.py
 ```
 
-El comando termina con código `0` si el programa pasa la verificación y con
-`1` si encuentra errores léxicos, sintácticos o semánticos. Los diagnósticos
-indican archivo, línea, columna y el fragmento de código cuando corresponde.
+El comando escribe el `.py` junto al `.qc`. Si hay errores léxicos, sintácticos
+o semánticos, muestra los diagnósticos y termina con código `1` antes de
+escribir el archivo.
 
-Para ejecutar solo el scanner o el parser:
+En la carrera podés apostar por Turbo, Moka o Canela y seguir sus avances hasta
+la meta. [Guía de la carrera](programas/guia.md)
 
-```bash
-python scanner/main.py archivo.qc
-python -m parser archivo.qc
-```
-
-## Desarrollo y validación
-
-Ejecutar las pruebas:
-
-```bash
-python -m unittest discover -s parser/verificacion -t . -v
-```
-
-Revisar el estilo:
-
-```bash
-python -m ruff check generador parser scanner
-```
-
-## Estructura
-
-- `scanner/`: análisis léxico.
-- `parser/`: análisis sintáctico, integración del ASA.
-- `parser/semantica/`: tabla de símbolos, verificación de identificadores,
-  inferencia de tipos, diagnósticos e interfaz de línea de comandos.
-- `parser/verificacion/`: pruebas automatizadas.
-- `docs/Tabla_de_simbolos.md`: diseño e impresión de la tabla de símbolos.
-- `docs/Errores_y_pruebas/Demostracion.md`: guía para demostrar el verificador.
-
-## Ejecutar el gestor de turnos
+También podés ejecutar el gestor de turnos, que permite agregar un nombre,
+atender a la siguiente persona y consultar cuántos turnos quedan.
 
 ```bash
 python -m generador programas/turnos.qc
 python programas/turnos.py
 ```
+
+## Ejecutar las etapas por separado
+
+```bash
+python scanner/main.py archivo.qc
+python -m parser archivo.qc
+python -m parser.semantica archivo.qc
+python -m parser.semantica archivo.qc --tabla
+```
+
+La opción `--tabla` muestra los cambios de la tabla de símbolos durante la
+verificación y su estado final.
+
+## Pruebas y estilo
+
+```bash
+python -m unittest discover -s parser/verificacion -t .
+python -m ruff check generador parser scanner
+```
+
+Las pruebas de extremo a extremo transpilan y ejecutan los ocho ejemplos del
+verificador. También comprueban diagnósticos, ámbitos, operaciones cuánticas y
+el gestor de turnos. Por defecto ejecutan el código generado con el mismo
+intérprete que corre las pruebas. Definí `QC_PYTHON_DESTINO` con la ruta a un
+intérprete de Python 3.8 para repetir la prueba de compatibilidad.
+
+## Estructura
+
+- [scanner/](scanner/) contiene el análisis léxico.
+- [parser/](parser/) contiene el análisis sintáctico y la construcción del ASA.
+- [parser/semantica/](parser/semantica/) contiene el verificador y la tabla de símbolos.
+- [generador/](generador/) contiene el visitante que emite Python y el soporte cuántico.
+- [programas/](programas/) contiene la carrera de caracoles y el gestor de turnos.
+- [parser/verificacion/](parser/verificacion/) contiene las pruebas automatizadas.
 
 ## Equipo
 
