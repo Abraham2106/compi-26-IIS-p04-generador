@@ -2,7 +2,7 @@
 
 Proyecto final del curso Compiladores e Intérpretes. Este repositorio parte de
 la implementación integrada del scanner, parser, ASA y verificador semántico
-de Quantum Coffee. La siguiente etapa es incorporar el generador de código.
+de Quantum Coffee. El generador traduce el ASA decorado a un archivo Python 3.8 o superior.
 
 La base actual valida identificadores y tipos, administra ámbitos y una tabla
 de símbolos, infiere tipos de retorno y decora el ASA con referencias a las
@@ -65,11 +65,12 @@ python -m ruff check generador parser scanner
 - `docs/Tabla_de_simbolos.md`: diseño e impresión de la tabla de símbolos.
 - `docs/Errores_y_pruebas/Demostracion.md`: guía para demostrar el verificador.
 
-## Inicio de la etapa de generación
+## Ejecutar el gestor de turnos
 
-El punto de entrada de esta etapa es
-`GeneradorPython().visitar(nodo_expresion)`, que devuelve el texto Python
-de una expresión del ASA verificado.
+```bash
+python -m generador programas/turnos.qc
+python programas/turnos.py
+```
 
 ## Equipo
 

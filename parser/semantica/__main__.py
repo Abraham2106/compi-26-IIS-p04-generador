@@ -17,6 +17,35 @@ from parser.semantica.impresion_tabla import imprimir_cambio_parcial
 from parser.semantica.tabla_simbolos import TablaSimbolos
 
 
+def analizar_fuente(fuente, ruta, mostrar_tabla=False):
+    entrada = explorar_para_parser(fuente)
+    if not entrada.apta:
+        for error in entrada.errores_lexicos:
+            print(f"{ruta}: {error}", file=sys.stderr)
+        return None
+    resultado = Analizador().analizar(entrada.tokens_para_parser())
+    for error in resultado.errores:
+        token = error.encontrado
+        print(
+            f"{ruta}:{token.linea}:{token.columna}: {error.mensaje}",
+            file=sys.stderr,
+        )
+    if not resultado.correcto:
+        return None
+    tabla = TablaSimbolos()
+    if mostrar_tabla:
+        print("Cambios de la tabla de simbolos")
+        tabla.al_cambiar = lambda cambio: imprimir_cambio_parcial(
+            tabla, cambio)
+    errores = verificar_semantica(resultado.arbol, tabla)
+    if mostrar_tabla:
+        print("\nTabla de simbolos final")
+        print(tabla.a_texto(), end="")
+    if reportar(errores, str(ruta), fuente):
+        return None
+    return resultado.arbol
+
+
 def main():
     argumentos = argparse.ArgumentParser(
         description="Verificador semantico de Quantum Coffee"
@@ -31,34 +60,12 @@ def main():
         fuente = ruta.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeError) as error:
         argumentos.error(str(error))
-    entrada = explorar_para_parser(fuente)
-    if not entrada.apta:
-        for error in entrada.errores_lexicos:
-            print(error, file=sys.stderr)
-        return 1
-    resultado = Analizador().analizar(entrada.tokens_para_parser())
-    for error in resultado.errores:
-        token = error.encontrado
-        print(
-            f"{ruta}:{token.linea}:{token.columna}: {error.mensaje}",
-            file=sys.stderr,
-        )
-    if not resultado.correcto:
-        return 1
-    tabla = TablaSimbolos()
-    if opciones.tabla:
-        print("Cambios de la tabla de simbolos")
-        tabla.al_cambiar = lambda cambio: imprimir_cambio_parcial(
-            tabla, cambio)
-    errores = verificar_semantica(resultado.arbol, tabla)
-    if opciones.tabla:
-        print("\nTabla de simbolos final")
-        print(tabla.a_texto(), end="")
-    if reportar(errores, str(ruta), fuente):
+    arbol = analizar_fuente(fuente, ruta, opciones.tabla)
+    if arbol is None:
         return 1
     print(f"{ruta}: verificacion semantica correcta")
     print("ASA decorado en preorden")
-    imprimir_preorden(resultado.arbol, con_semantica=True)
+    imprimir_preorden(arbol, con_semantica=True)
     return 0
 
 

@@ -1,5 +1,9 @@
-"""Emisión de expresiones Python a partir del ASA verificado."""
+"""Emisión de Python a partir del ASA verificado."""
 
+from pathlib import Path
+
+from parser.asa_impresion import recorrer_preorden
+from parser.integracion import ClaseNodo
 from parser.semantica.visitante import VisitanteASA
 
 OPERADORES = {"ConAzucar": "and", "SinAzucar": "or", "Amargo": "not"}
@@ -10,11 +14,25 @@ LITERALES = {
 
 
 class GeneradorPython(VisitanteASA):
+    def generar(self, arbol):
+        self.lineas = []
+        self.nivel = 0
+        nodos = recorrer_preorden(arbol)
+        if any(n.clase == ClaseNodo.QUBIT for _, n in nodos):
+            soporte = Path(__file__).with_name("cuantica.py")
+            self.lineas.extend(soporte.read_text(encoding="utf-8").splitlines())
+            self.lineas.extend(("", ""))
+        self.visitar(arbol)
+        return "\n".join(self.lineas) + "\n"
+
     def visitar_generico(self, nodo):
         p = nodo.rango.inicio
         raise ValueError(
             f"{p.linea}:{p.columna}: nodo sin emisión {nodo.clase}"
         )
+
+    def emitir(self, linea):
+        self.lineas.append("    " * self.nivel + linea)
 
     def nombre(self, nodo):
         p = nodo.rango.inicio
@@ -22,6 +40,84 @@ class GeneradorPython(VisitanteASA):
 
     def referencia(self, nodo, papel="nombre"):
         return self.nombre(nodo.semantica.definiciones[papel])
+
+    def visitar_programa(self, nodo):
+        principal = nodo.hijos[-1]
+        for hijo in nodo.hijos[:-1]:
+            if hijo.clase == ClaseNodo.FUNCION:
+                self.visitar(hijo)
+        self.visitar(principal)
+        self.emitir('if __name__ == "__main__":')
+        self.nivel += 1
+        for hijo in nodo.hijos[:-1]:
+            if hijo.clase != ClaseNodo.FUNCION:
+                self.visitar(hijo)
+        self.emitir("qc_chorreador()")
+        self.nivel -= 1
+
+    def visitar_funcion(self, nodo):
+        *parametros, bloque = nodo.hijos
+        firma = ", ".join(map(self.nombre, parametros))
+        self.funcion(self.nombre(nodo), firma, bloque)
+
+    def visitar_principal(self, nodo):
+        self.funcion("qc_chorreador", "", nodo.hijos[0])
+
+    def funcion(self, nombre, firma, bloque):
+        self.emitir(f"def {nombre}({firma}):")
+        self.nivel += 1
+        globales = set()
+        for _, nodo in recorrer_preorden(bloque):
+            if nodo.clase == ClaseNodo.ASIGNACION:
+                destino = nodo.semantica.definiciones["nombre"]
+                if destino.clase == ClaseNodo.GLOBAL:
+                    globales.add(self.nombre(destino))
+        if globales:
+            self.emitir("global " + ", ".join(sorted(globales)))
+        self.visitar(bloque)
+        self.nivel -= 1
+        self.lineas.extend(("", ""))
+
+    def visitar_bloque(self, nodo):
+        if not nodo.hijos:
+            self.emitir("pass")
+        for hijo in nodo.hijos:
+            expresion = self.visitar(hijo)
+            if expresion is not None:
+                self.emitir(expresion)
+
+    def bloque(self, cabecera, nodo):
+        self.emitir(cabecera + ":")
+        self.nivel += 1
+        self.visitar(nodo)
+        self.nivel -= 1
+
+    def visitar_local(self, nodo):
+        valor = self.visitar(nodo.hijos[0]) if nodo.hijos else "None"
+        self.emitir(f"{self.nombre(nodo)} = {valor}")
+
+    visitar_global = visitar_local
+
+    def visitar_asignacion(self, nodo):
+        self.emitir(f"{self.referencia(nodo)} = {self.visitar(nodo.hijos[0])}")
+
+    def visitar_condicional(self, nodo):
+        condicion, si, *resto = nodo.hijos
+        self.bloque(f"if {self.visitar(condicion)}", si)
+        if resto:
+            self.bloque("else", resto[0])
+
+    def visitar_mientras(self, nodo):
+        condicion, cuerpo = nodo.hijos
+        self.bloque(f"while {self.visitar(condicion)}", cuerpo)
+
+    def visitar_para_cada(self, nodo):
+        lista = self.referencia(nodo, "lista")
+        self.bloque(f"for {self.nombre(nodo)} in {lista}", nodo.hijos[0])
+
+    def visitar_retorno(self, nodo):
+        valor = self.visitar(nodo.hijos[0]) if nodo.hijos else ""
+        self.emitir(f"return {valor}".rstrip())
 
     def visitar_identificador(self, nodo):
         return self.referencia(nodo)
@@ -63,3 +159,14 @@ class GeneradorPython(VisitanteASA):
             return f"({valor} in {lista})"
         operacion = {"insertar": "append", "extraer": "pop"}[metodo]
         return f"{lista}.{operacion}({valor})"
+
+    def visitar_qubit(self, nodo):
+        self.emitir(f"{self.nombre(nodo)} = _qubit()")
+
+    def visitar_compuerta(self, nodo):
+        puerta = nodo.atributos["compuerta"]
+        args = ", ".join(map(self.visitar, nodo.hijos))
+        self.emitir(f"_puerta({puerta!r}, {args})")
+
+    def visitar_medicion(self, nodo):
+        return f"_medir({self.visitar(nodo.hijos[0])})"
